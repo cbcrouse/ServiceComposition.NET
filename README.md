@@ -84,7 +84,7 @@ MyProject/
 │  ├─ Application/
 │  │  ├─ MyApp.Application.csproj
 │  │  └─ Services/
-│  │     └─ MyService.cs
+│  │     └─ MyAppService.cs
 │  ├─ Infrastructure/
 │  │  ├─ MyApp.Infrastructure.csproj
 │  │  ├─ Persistence/
@@ -96,10 +96,12 @@ MyProject/
 │  ├─ Presentation/
 │  │  ├─ MyApp.Api/
 │  │  │  ├─ MyApp.Api.csproj
-│  │  │  └─ Program.cs
+│  │  │  ├─ Program.cs
+│  │  │  └─ WebApiServiceComposition.cs
 │  │  ├─ MyApp.Console/
 │  │  │  ├─ MyApp.Console.csproj
-│  │  │  └─ Program.cs
+│  │  │  ├─ Program.cs
+│  │  │  └─ ConsoleServiceComposition.cs
 │  │  └─ ...
 └─ tests/
    ├─ MyApp.UnitTests/
@@ -180,10 +182,10 @@ To define one, inherit from `ServiceCompositionRoot<TPipeline>` and add registra
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 
-public sealed class WebAppServiceCompositionRoot
+public sealed class WebAppServiceComposition
     : ServiceCompositionRoot<CoreServiceRegistrationPipeline>
 {
-    public WebAppServiceCompositionRoot()
+    public WebAppServiceComposition()
     {
         AddRegistration(services =>
             services.AddAuthorization());
@@ -216,7 +218,7 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
     ["My:Property"] = "Value"
 });
 
-var compositionRoot = new WebAppServiceCompositionRoot();
+var compositionRoot = new WebAppServiceComposition();
 compositionRoot.ConfigureServices(builder.Services, builder.Configuration);
 
 var app = builder.Build();
