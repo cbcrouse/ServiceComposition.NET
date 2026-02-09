@@ -2,7 +2,7 @@
 
 namespace StartupOrchestration.NET.UnitTests.TestClasses;
 
-internal sealed class TestServiceRegistrationOrchestratorWithLogger : ServiceRegistrationOrchestrator
+internal sealed class TestServiceRegistrationPipelineWithLogger : ServiceRegistrationPipeline
 {
     private readonly Mock<ILogger> _mockLogger = new();
 

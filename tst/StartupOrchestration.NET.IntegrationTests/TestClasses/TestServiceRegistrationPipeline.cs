@@ -1,15 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Test.Common.Extensions;
 
 namespace StartupOrchestration.NET.IntegrationTests.TestClasses;
 
-public class TestServiceRegistrationOrchestrator : ServiceRegistrationOrchestrator
+internal class TestServiceRegistrationPipeline : ServiceRegistrationPipeline
 {
     /// <inheritdoc />
     protected override ILogger StartupLogger => NullLogger.Instance;
 
-    public TestServiceRegistrationOrchestrator()
+    public TestServiceRegistrationPipeline()
     {
-        ServiceRegistrationExpressions.Add((services, config) => services.RegisterConfiguredOptions<TestOptions>(config));
+        AddRegistration((services, config) => services.RegisterConfiguredOptions<TestOptions>(config));
     }
 }

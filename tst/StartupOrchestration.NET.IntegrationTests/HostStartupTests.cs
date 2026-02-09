@@ -1,24 +1,27 @@
 ﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using StartupOrchestration.NET.IntegrationTests.TestClasses;
+using Test.Common.TestClasses;
 
 namespace StartupOrchestration.NET.IntegrationTests;
 
-public class HostStartupTests
+public class HostStartupTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public HostStartupTests()
+    public HostStartupTests(WebApplicationFactory<Program> factory)
     {
-        // Arrange
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
-        var builder = new WebHostBuilder().UseStartup<TestStartupOrchestrator>();
+        factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Test");
 
-        // Act & Assert
-        var t = new TestServer(builder);
-        _serviceProvider = t.Services;
+            // Required for web app factory to find appsettings.json and other content files in the test project
+            builder.UseContentRoot(AppContext.BaseDirectory);
+        });
+
+        _serviceProvider = factory.Services;
     }
 
     [Fact]

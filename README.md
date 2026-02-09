@@ -4,29 +4,51 @@
 
 ## 🔍 Overview
 
-StartupOrchestration.NET is a powerful tool for .NET developers that want to write clean, organized and easily-maintainable code. With its use, developers can separate the presentation layer from the application layer, providing a flexible and extensible way to register services. Additionally, the library's built-in support for startup logging provides an easy way to diagnose and troubleshoot any registration issues during application startup. With StartupOrchestration.NET, developers can focus on the business logic of their applications, without having to worry about the details of service registration. Overall, if you want to write high-quality .NET code, StartupOrchestration.NET is a must-have tool.
+StartupOrchestration.NET is a lightweight service composition library for .NET applications that need a clear boundary between *defining* service registrations and *executing* them at startup.
+
+The library is built around two simple ideas:
+
+- **Service registration pipelines**, which define an ordered set of service registrations
+- **Composition roots**, which execute those pipelines using service and configuration objects supplied by the host
+
+Instead of letting presentation layers control or mix infrastructure registrations, StartupOrchestration.NET enforces a predictable startup flow. Core registrations always run first, and presentation-specific services are added afterward. This guarantees consistent ordering and prevents accidental coupling between layers.
+
+The library does not own configuration, hosting, or application startup. Those concerns stay with the host. StartupOrchestration.NET focuses solely on composing services in a controlled, testable way that works across different application types and hosting models.
+
+The result is a startup process that is easier to understand, easier to test, and easier to maintain as applications grow.
 
 ---
 
 ## ✅ Features
 
-- Enables the application layer to manage service registrations independently of the presentation layer, allowing for a more modular and maintainable codebase.
-- Facilitates separation of concerns between the presentation and application layers, preventing any presentation-specific dependencies from creeping into the application layer.
-- Provides a generic implementation that can be easily customized for different types of applications, saving development time and effort.
-- Offers a flexible interface for orchestrating service registrations that is agnostic to the presentation layer, allowing for more modular design and easier maintainability.
-- Reduces duplicated configuration code between the presentation and application layers, improving maintainability and reducing the risk of configuration errors, as well as simplifying secret management by reducing the number of places to store secrets such as connection strings.
-- Enables dynamic logging of service registration expressions for easier startup debugging, making it easier to diagnose and resolve any issues during the startup process.
-- Can be used with a variety of different presentation layer types, including console apps, web APIs, and MVC applications, providing a high degree of flexibility and adaptability.
+- Defines an explicit, ordered pipeline for service registrations, ensuring core infrastructure services are always registered before presentation-specific services.
+- Keeps service registration logic independent of any hosting model, startup pattern, or presentation framework.
+- Allows infrastructure and application layers to register services without referencing `Startup`, `Program`, or other presentation-layer constructs.
+- Uses expression-based service registrations that are validated up front and executed lazily during application startup.
+- Supports both configuration-aware and configuration-free registrations, without forcing all registrations to depend on `IConfiguration`.
+- Leaves ownership of `IServiceCollection` and `IConfiguration` with the host, avoiding hidden behavior and making startup behavior predictable.
+- Emits detailed startup logging for each registration, showing execution order and surfacing failures clearly.
+- Works anywhere `IServiceCollection` and `IConfiguration` are used for service registration, regardless of hosting model or application type.
+- Improves testability by allowing service composition to be executed directly against a service collection without starting a full host.
 
 ---
 
 ## 👤 Audience
 
-This library is aimed at developers who are building applications that may grow in size and complexity over time. If you're working on a small, simple application that you don't anticipate growing much, StartupOrchestration&#46;NET may not be necessary for your project.
+StartupOrchestration.NET is designed for .NET developers who want clearer boundaries around service registration as their applications grow.
 
-However, if you're building a more ambitious application or multiple applications that share common services, StartupOrchestration&#46;NET can be a valuable tool for streamlining the initialization and configuration of your application's dependencies and services. This library helps you reduce boilerplate code and makes it easier to maintain your application's dependencies as it grows.
+If your application is starting to accumulate startup logic spread across `Program.cs`, extension methods, and infrastructure projects—and it’s becoming harder to see *what gets registered, when, and why*—this library helps bring that under control.
 
-In addition, this library is designed specifically for .NET applications, taking advantage of the unique features and capabilities of the .NET framework. This makes it an ideal choice for .NET developers who want to simplify the development process and ensure that their applications are built to last.
+It’s a good fit if you:
+
+- Maintain multiple applications or hosts that share a common application or infrastructure layer  
+- Want to keep service registration logic out of presentation-specific startup code  
+- Prefer explicit, testable startup composition over large, opaque startup methods  
+- Care about startup visibility and want trace-level insight into registration order and failures  
+
+StartupOrchestration.NET works equally well for web apps, background services, console applications, and test hosts—anywhere `IServiceCollection` and `IConfiguration` are used. It does **not** require Clean Architecture, but it aligns naturally with layered designs where startup composition is treated as a boundary concern.
+
+For very small or throwaway applications, the added structure may not be necessary. But for systems that evolve, scale, or support multiple entry points, StartupOrchestration.NET provides a clear, maintainable way to organize startup logic without coupling it to a specific hosting model.
 
 ---
 
@@ -42,160 +64,349 @@ dotnet add package StartupOrchestration.NET
 
 ## 🧑‍💻 Usage
 
-Here's an example of how the `ServiceRegistrationOrchestrator` and `StartupOrchestrator` classes might be used in a .NET solution following a clean architecture structure:
+StartupOrchestration.NET is built around a simple idea:
 
-> NOTE: A clean architecture structure is not required to use StartupOrchestration.NET. It is simply an example of how the library can be used in a real-world application.
+**service registration should be explicit, ordered, testable, and independent of the hosting model.**
 
-```css
-MyProject/
-├─ src/
-│  ├─ Application/
-│  │  └─ MyApp/
-│  │     ├─ MyApp.csproj
-│  │     └─ ...
-│  ├─ Infrastructure/
-│  │  ├─ Startup/
-│  │  │  └─ AppStartupOrchestrator.cs
-│  │  ├─ Persistence/
-│  │  │  ├─ Repositories/
-│  │  │  │  └─ MyRepository.cs
-│  │  │  └─ MyAppDbContext.cs
-│  │  └─ ...
-│  ├─ Presentation/
-│  │  ├─ MyApp.API/
-│  │  │  ├─ MyApp.API.csproj
-│  │  │  ├─ WebApiStartup.cs
-│  │  │  └─ ...
-│  │  ├─ MyApp.Console/
-│  │  │  ├─ MyApp.Console.csproj
-│  │  │  ├─ ConsoleStartup.cs
-│  │  │  └─ ...
-│  │  ├─ MyApp.AzureFunction/
-│  │  │  ├─ MyApp.AzureFunction.csproj
-│  │  │  ├─ FunctionStartup.cs
-│  │  │  └─ ...
-│  │  └─ ...
-└─ tests/
-   ├─ MyApp.UnitTests/
-   │  ├─ MyApp.UnitTests.csproj
-   │  └─ ...
-   └─ ...
-```
+Instead of scattering service registrations across `Program.cs`, extension methods, and framework-specific startup hooks, this library allows you to define registrations as reusable pipelines that can be executed by any presentation layer supplying an `IServiceCollection` and an `IConfiguration`.
 
-In this example, the `Application` project contains the core business logic and is responsible for registering the required services. The `Infrastructure` project is responsible for implementing the services that the `Application` layer needs, such as database access via `MyDbContext` and `MyRepository`.
-
-In order to decouple the presentation layer from the rest of the application, we use the `ServiceRegistrationOrchestrator` and `StartupOrchestrator` classes.
-
-To use `StartupOrchestration.NET`, you need to implement the `ServiceRegistrationOrchestrator` class in your application layer, and inherit from `StartupOrchestrator<TOrchestrator>` in your presentation layer.
-
-Here's an example of how you can use `StartupOrchestration.NET` in your application:
-
-```csharp
-// Application layer
-public class AppStartupOrchestrator : ServiceRegistrationOrchestrator
-{
-    /// <inheritdoc />
-    protected override ILogger StartupLogger => NullLogger.Instance;
-
-    public AppStartupOrchestrator()
-    {
-        // Register shared services
-        ServiceRegistrationExpressions.Add((services, config) => services.RegisterConfiguredOptions<RepositoryOptions>(config));
-        ServiceRegistrationExpressions.Add((services, config) => services.AddTransient<IMyRepository, MyRepository>());
-        ServiceRegistrationExpressions.Add((services, config) => services.AddTransient<IEmailService, EmailService>());
-    }
-}
-
-// Presentation layer
-public class WebApiStartup : StartupOrchestrator<AppStartupOrchestrator>
-{
-    public WebApiStartup() : base(configuration)
-    {
-        ServiceRegistrationExpressions.Add((services, config) => services.RegisterConfiguredOptions<SwaggerOptions>(config));
-        ServiceRegistrationExpressions.Add((services, config) => services.AddTransient<IService, Service>());
-        ServiceRegistrationExpressions.Add((services, config) => services.AddAuthorization());
-        ServiceRegistrationExpressions.Add((services, config) => services.AddSwagger());
-    }
-
-    protected override void AddConfigurationProviders(IConfigurationBuilder builder)
-    {
-        builder.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-    }
-}
-
-public static class ServiceCollectionExtensions
-{
-    // Helper method for registering options classes using the IOptions pattern
-    public static void RegisterConfiguredOptions<T>(this IServiceCollection servicesCollection, IConfiguration configuration) where T : class, new()
-    {
-        string sectionKey = typeof(T).Name;
-        IConfigurationSection section = configuration.GetSection(sectionKey.Replace("Options", ""));
-
-        var options = new T();
-        section.Bind(options);
-
-        servicesCollection.Configure<T>(section);
-    }
-}
-```
-
-Here, `AppStartupOrchestrator` is the implementation of `ServiceRegistrationOrchestrator` in the application layer, and `WebApiStartup` is the implementation of `StartupOrchestrator<TOrchestrator>` in the presentation layer.
-
-In this example, `AppStartupOrchestrator` inherits from `ServiceRegistrationOrchestrator` and registers the required services for the Application layer. `WebApiStartup` inherits from `StartupOrchestrator<AppStartupOrchestrator>` and uses the `ServiceRegistrationOrchestrator` in the Application layer to register its own required services.
-
-By doing this, the Application layer becomes independent of any specific presentation layer, allowing for flexibility in creating multiple presentation layers to suit different use cases or to change the presentation layer without affecting the core application logic or it's dependencies.
-
-> TIP: You can see how this library is implemented in <https://github.com/cbcrouse/CleanArchitecture> using more complex registrations like AutoMapper.
+A clean architecture structure is not required, but it provides a helpful mental model for how pipelines and composition roots fit together.
 
 ---
 
-## 🔌 ServiceRegistrationOrchestrator and StartupOrchestrator
+### Example Project Structure
 
-The `ServiceRegistrationOrchestrator` class is the main class that is used to manage the service registration process. It provides a way for developers to define and manage the service registration expressions that are used by the Dependency Injection (DI) container to instantiate the services used by the application. The `ServiceRegistrationOrchestrator` class is abstract and must be inherited by the application layer to implement its own registration expressions.
+```text
+MyProject/
+├─ src/
+│  ├─ Application/
+│  │  ├─ MyApp.Application.csproj
+│  │  └─ Services/
+│  │     └─ MyService.cs
+│  ├─ Infrastructure/
+│  │  ├─ MyApp.Infrastructure.csproj
+│  │  ├─ Persistence/
+│  │  │  ├─ MyDbContext.cs
+│  │  │  └─ Repositories/
+│  │  │     └─ MyRepository.cs
+│  │  └─ Startup/
+│  │     └─ InfrastructureRegistrationPipeline.cs
+│  ├─ Presentation/
+│  │  ├─ MyApp.Api/
+│  │  │  ├─ MyApp.Api.csproj
+│  │  │  └─ Program.cs
+│  │  ├─ MyApp.Console/
+│  │  │  ├─ MyApp.Console.csproj
+│  │  │  └─ Program.cs
+│  │  └─ ...
+└─ tests/
+   ├─ MyApp.UnitTests/
+   ├─ MyApp.IntegrationTests/
+   └─ ...
+```
 
-The `StartupOrchestrator` class is an abstract class that is intended to be inherited from a `Startup.cs` class that can be used in the presentation layer to orchestrate the startup process of the application. It allows the developer to define service registration expressions that will be used by the DI container when initializing services. By using the `StartupOrchestrator`, the developer can separate the service registration process from the startup process of the application.
+In this structure:
 
-Both classes are important in enabling the separation of concerns between the application and presentation layers, which makes it easier to manage the application's services and startup process. By defining and managing service registration expressions in the application layer, the developer can ensure that the service registration process is decoupled from the presentation layer.
+- **Infrastructure** defines a service registration pipeline
+- **Presentation** owns startup and execution
+- The infrastructure pipeline is reusable across multiple presentation layers
+- No pipeline depends on a specific hosting model
+
+---
+
+### Core Concepts
+
+There are two main building blocks:
+
+- **ServiceRegistrationPipeline**
+
+  A reusable, ordered set of validated service registration expressions.
+
+- **ServiceCompositionRoot**
+
+  The presentation-layer entry point that executes the pipeline using the provided services and configuration.
+
+Each registration is expressed as:
+
+```csharp
+Expression<Action<IServiceCollection, IConfiguration>>
+```
+
+This allows StartupOrchestration.NET to:
+
+- Validate registrations up front  
+- Execute them in a predictable order  
+- Log each registration before and after execution  
+- Surface failures with clear startup context  
+
+---
+
+### Defining a Pipeline
+
+Pipelines define *what* services should be registered, without assuming *where* or *how* the application is hosted.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+public sealed class CoreServiceRegistrationPipeline : ServiceRegistrationPipeline
+{
+    protected override ILogger StartupLogger => NullLogger.Instance;
+
+    public CoreServiceRegistrationPipeline()
+    {
+        AddRegistration((services, config) =>
+            services.RegisterConfiguredOptions<MyOptions>(config));
+
+        AddRegistration((services, _) =>
+            services.AddSingleton<IMyService, MyService>());
+    }
+}
+```
+
+Each call to `AddRegistration` adds a validated service registration expression to the pipeline. Invalid expressions are rejected immediately.
+
+---
+
+### Defining a Service Composition Root
+
+A service composition root is a presentation-layer class that executes a service registration pipeline and adds any presentation-specific registrations.
+
+To define one, inherit from `ServiceCompositionRoot<TPipeline>` and add registrations in the constructor.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+
+public sealed class WebAppServiceCompositionRoot
+    : ServiceCompositionRoot<CoreServiceRegistrationPipeline>
+{
+    public WebAppServiceCompositionRoot()
+    {
+        AddRegistration(services =>
+            services.AddAuthorization());
+
+        AddRegistration(services =>
+            services.AddEndpointsApiExplorer());
+    }
+}
+```
+
+The generic pipeline type (`CoreServiceRegistrationPipeline`) defines the shared registrations that always run first. Any registrations added here are applied afterward.
+
+---
+
+### Composing Services in the Presentation Layer
+
+The presentation layer controls execution. It supplies the `IServiceCollection` and `IConfiguration`, and decides which pipelines to run.
+
+This example uses a minimal API, but the same approach works for web APIs, background services, console apps, and test hosts.
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+    ["My:Property"] = "Value"
+});
+
+var compositionRoot = new WebAppServiceCompositionRoot();
+compositionRoot.ConfigureServices(builder.Services, builder.Configuration);
+
+var app = builder.Build();
+
+app.MapGet("/", () => "Hello world");
+
+app.Run();
+```
+
+The pipelines do not create or manage configuration or services. They simply consume what the presentation layer provides.
+
+---
+
+### Reusing Pipelines Across Hosts
+
+Because pipelines rely only on `IServiceCollection` and `IConfiguration`, the same pipelines can be reused across multiple entry points:
+
+- Web APIs
+- Minimal APIs
+- Background services
+- Console applications
+- Integration tests
+
+This avoids duplicated startup logic and keeps infrastructure consistent and decoupled from presentation dependency concerns.
+
+---
+
+### Using Pipelines in Tests
+
+Pipelines can be executed directly in tests without spinning up a full host.
+
+```csharp
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+var configuration = new ConfigurationBuilder()
+    .AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["My:Property"] = "TestValue"
+    })
+    .Build();
+
+var pipeline = new CoreServiceRegistrationPipeline();
+pipeline.Execute(services, configuration);
+
+var provider = services.BuildServiceProvider();
+var service = provider.GetRequiredService<IMyService>();
+```
+
+This makes startup behavior easy to validate and understand in isolation.
+
+---
+
+### Summary
+
+- Pipelines define *what* gets registered  
+- The presentation layer controls *when* and *with which configuration*  
+- Registrations are validated, ordered, and logged  
+- No inheritance-based startup model  
+- No coupling to a specific hosting framework  
+
+StartupOrchestration.NET fits naturally anywhere `IServiceCollection` and `IConfiguration` are already in use.
+
+---
+
+## 🔌 ServiceRegistrationPipeline and ServiceCompositionRoot
+
+StartupOrchestration.NET is built around two core concepts: **pipelines** and **composition roots**.
+
+### ServiceRegistrationPipeline
+
+A `ServiceRegistrationPipeline` defines an ordered set of service registration expressions.  
+It is typically implemented outside the presentation layer (for example, in an application or infrastructure project) and contains registrations that should **always run first**, regardless of how the application is hosted.
+
+The pipeline does not create or manage `IServiceCollection` or `IConfiguration`. Instead, it declares *what* should be registered and relies on the presentation layer to supply those objects at execution time.
+
+This makes pipelines reusable across different hosts and ensures that foundational services are registered consistently.
+
+### ServiceCompositionRoot
+
+A `ServiceCompositionRoot<TPipeline>` represents the presentation-layer entry point for service composition.
+
+Its responsibility is to:
+- Accept the `IServiceCollection` and `IConfiguration` provided by the host
+- Execute the referenced `ServiceRegistrationPipeline`
+- Add any presentation-specific service registrations on top
+
+By design, the presentation layer never controls *when* pipeline registrations occur—only *what* it adds afterward. This guarantees that core infrastructure and application services are registered first and cannot be interleaved with presentation concerns.
+
+Together, these two types create a clear boundary:
+- Pipelines define **shared, ordered registrations**
+- Composition roots define **host-specific additions**
+
+This separation keeps startup logic explicit, predictable, and easy to reuse across different application types.
 
 ---
 
 ## 📄 The Use of Expressions
 
-In `ServiceRegistrationOrchestrator`, each expression in the `ServiceRegistrationExpressions` collection is a delegate that is executed during the `Orchestrate` method call. These expressions are used to register services with the dependency injection container. The benefit of using expressions instead of functions is that the expressions can be evaluated lazily. This means that the expressions are not executed until they are needed, which can improve the performance of the startup process and also avoid timing issues that arise from attempting to register services in various parts of the application.
+StartupOrchestration.NET uses **expression trees** to represent service registrations instead of executing registration logic immediately.
 
-Additionally, the expressions provide a way to perform dynamic logging of the expression body. This can be useful for debugging the startup process, as it allows developers to see exactly which expressions are being executed, and in what order.
+Each service registration is captured as an  
+`Expression<Action<IServiceCollection, IConfiguration>>`  
+and stored in an ordered collection. These expressions are **not executed when they are added**. They are only compiled and invoked later, when the pipeline is executed by the presentation layer.
 
-Each expression takes in two parameters: `IServiceCollection` and `IConfiguration`. The IServiceCollection is a collection of service descriptors that is used to register services with the .NET dependency injection container. The IConfiguration is the configuration for the application. The values for these parameters are typically passed down from the presentation layer through the Startup class. By using expressions, the application layer can add services to the collection independently of the presentation layer, allowing for a more modular and organized approach to managing dependencies and configuration.
+This approach provides a few important benefits.
+
+### Deferred execution
+
+Because registrations are stored as expressions, nothing is registered until the pipeline runs. This avoids timing issues that can arise when services are registered across multiple projects or startup paths, and it keeps startup behavior predictable and explicit.
+
+The presentation layer decides *when* service composition happens by calling `Execute`, while the pipeline defines *what* gets registered.
+
+### Ordered, inspectable registrations
+
+Expressions preserve the structure of the registration call itself. This makes it possible to:
+- Enforce validation rules (only valid `IServiceCollection` extension methods are allowed)
+- Execute registrations in a guaranteed order
+- Log each registration with meaningful, human-readable output
+
+This is especially helpful when diagnosing startup failures or unexpected service lifetimes.
+
+### Configuration-aware by default
+
+All registrations are normalized to accept both:
+- `IServiceCollection`
+- `IConfiguration`
+
+Registrations that don’t require configuration are automatically lifted into this shape. This keeps the execution model consistent while still allowing simple registrations when configuration isn’t needed.
+
+Because the configuration object is supplied by the presentation layer at execution time, pipelines remain independent of any specific hosting model or startup mechanism.
+
+### Clean separation of responsibilities
+
+Using expressions allows lower layers to declare service registrations without:
+- Owning the DI container
+- Owning configuration
+- Depending on a specific presentation framework
+
+The result is a clean, explicit service composition flow where:
+- Pipelines define registrations
+- Composition roots execute them
+- Hosts control startup timing
+
+This keeps startup logic modular, testable, and easy to reason about as applications grow.
 
 ### Startup Logging
 
-The `StartupLogger` property is used to provide a way to log startup events before the application's logger is available. Logging is an important part of any application, and startup logging is especially useful as it can provide insight into the order in which services are initialized.
+StartupOrchestration.NET includes first-class support for **startup-time logging** through the `StartupLogger` property on a service registration pipeline.
 
-Using a logging framework like Serilog, you can log startup events to a file or a database for later analysis. This can be useful in identifying startup bottlenecks, dependencies that are failing to initialize, and more. Additionally, startup logging can provide context for debugging, as you can see the order in which services are being registered and identify any potential issues early on.
+Service registrations often run **before the application’s logging infrastructure is fully configured**. The `StartupLogger` exists specifically to cover this gap, giving you visibility into what happens during service composition—when failures are otherwise difficult to diagnose.
+
+As each registration expression is executed, the pipeline emits trace-level log entries that indicate:
+- When a registration starts
+- When it completes successfully
+- When it fails due to an exception
+
+This makes it easy to see the exact order in which services are registered and to pinpoint the registration that caused a startup failure.
+
+You can back `StartupLogger` with any logging implementation you prefer, including Serilog, NLog, or the built-in logging abstractions. Logs can be written to the console, files, or external systems, depending on how early diagnostics need to be captured.
+
+Startup logging is especially useful when:
+- Diagnosing failures that occur before the host fully starts
+- Verifying registration order across multiple layers
+- Tracking down misconfigured options or missing dependencies
+
+By making startup behavior observable, the library helps reduce guesswork and shortens the feedback loop when something goes wrong during application initialization.
 
 #### Example Log Output
 
 ```log
-[2024:10:13 07:16:48.999 PM] [Verbose] [AppStartupOrchestrator] '"AddOptions(this IServiceCollection)"' was started...
-[2024:10:13 07:16:49.043 PM] [Verbose] [AppStartupOrchestrator] '"AddOptions(this IServiceCollection)"' completed successfully!
-[2024:10:13 07:16:49.045 PM] [Verbose] [AppStartupOrchestrator] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsFactory`1[TOptions]>)"' was started...
-[2024:10:13 07:16:49.046 PM] [Verbose] [AppStartupOrchestrator] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsFactory`1[TOptions]>)"' completed successfully!
-[2024:10:13 07:16:49.048 PM] [Verbose] [AppStartupOrchestrator] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsMonitor`1[TOptions]>)"' was started...
-[2024:10:13 07:16:49.049 PM] [Verbose] [AppStartupOrchestrator] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsMonitor`1[TOptions]>)"' completed successfully!
-[2024:10:13 07:16:49.051 PM] [Verbose] [AppStartupOrchestrator] '"AddOptions<SqlServerOptions>(this IServiceCollection, IConfiguration)"' was started...
-[2024:10:13 07:16:49.061 PM] [Verbose] [AppStartupOrchestrator] '"AddOptions<SqlServerOptions>(this IServiceCollection, IConfiguration)"' completed successfully!
-[2024:10:13 07:16:49.064 PM] [Verbose] [AppStartupOrchestrator] '"AddSqlServer(this IServiceCollection)"' was started...
-[2024:10:13 07:16:49.067 PM] [Verbose] [AppStartupOrchestrator] '"AddSqlServer(this IServiceCollection)"' completed successfully!
-[2024:10:13 07:16:49.170 PM] [Verbose] [AppStartupOrchestrator] '"AddAuthorization(this IServiceCollection, IConfiguration)"' was started...
-[2024:10:13 07:16:49.181 PM] [Verbose] [AppStartupOrchestrator] '"AddAuthorization(this IServiceCollection, IConfiguration)"' completed successfully!
-[2024:10:13 07:16:49.184 PM] [Verbose] [AppStartupOrchestrator] '"AddRazorPagesWithAuthorization(this IServiceCollection, IConfiguration)"' was started...
-[2024:10:13 07:16:49.262 PM] [Verbose] [AppStartupOrchestrator] '"AddRazorPagesWithAuthorization(this IServiceCollection, IConfiguration)"' completed successfully!
-[2024:10:13 07:16:49.264 PM] [Verbose] [AppStartupOrchestrator] '"AddCascadingAuthenticationState(this IServiceCollection)"' was started...
-[2024:10:13 07:16:49.265 PM] [Verbose] [AppStartupOrchestrator] '"AddCascadingAuthenticationState(this IServiceCollection)"' completed successfully!
-[2024:10:13 07:16:49.267 PM] [Verbose] [AppStartupOrchestrator] '"AddServerSideBlazor(this IServiceCollection, Action`1)"' was started...
-[2024:10:13 07:16:49.293 PM] [Verbose] [AppStartupOrchestrator] '"AddServerSideBlazor(this IServiceCollection, Action`1)"' completed successfully!
-[2024:10:13 07:16:49.294 PM] [Verbose] [AppStartupOrchestrator] '"AddMudBlazorServices(this IServiceCollection, IConfiguration)"' was started...
-[2024:10:13 07:16:49.303 PM] [Verbose] [AppStartupOrchestrator] '"AddMudBlazorServices(this IServiceCollection, IConfiguration)"' completed successfully!
+[2024:10:13 07:16:48.999 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddOptions(this IServiceCollection)"' was started...
+[2024:10:13 07:16:49.043 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddOptions(this IServiceCollection)"' completed successfully!
+[2024:10:13 07:16:49.045 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsFactory`1[TOptions]>)"' was started...
+[2024:10:13 07:16:49.046 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsFactory`1[TOptions]>)"' completed successfully!
+[2024:10:13 07:16:49.048 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsMonitor`1[TOptions]>)"' was started...
+[2024:10:13 07:16:49.049 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsMonitor`1[TOptions]>)"' completed successfully!
+[2024:10:13 07:16:49.051 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddOptions<SqlServerOptions>(this IServiceCollection, IConfiguration)"' was started...
+[2024:10:13 07:16:49.061 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddOptions<SqlServerOptions>(this IServiceCollection, IConfiguration)"' completed successfully!
+[2024:10:13 07:16:49.064 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddSqlServer(this IServiceCollection)"' was started...
+[2024:10:13 07:16:49.067 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddSqlServer(this IServiceCollection)"' completed successfully!
+[2024:10:13 07:16:49.170 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddAuthorization(this IServiceCollection, IConfiguration)"' was started...
+[2024:10:13 07:16:49.181 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddAuthorization(this IServiceCollection, IConfiguration)"' completed successfully!
+[2024:10:13 07:16:49.184 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddRazorPagesWithAuthorization(this IServiceCollection, IConfiguration)"' was started...
+[2024:10:13 07:16:49.262 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddRazorPagesWithAuthorization(this IServiceCollection, IConfiguration)"' completed successfully!
+[2024:10:13 07:16:49.264 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddCascadingAuthenticationState(this IServiceCollection)"' was started...
+[2024:10:13 07:16:49.265 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddCascadingAuthenticationState(this IServiceCollection)"' completed successfully!
+[2024:10:13 07:16:49.267 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddServerSideBlazor(this IServiceCollection, Action`1)"' was started...
+[2024:10:13 07:16:49.293 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddServerSideBlazor(this IServiceCollection, Action`1)"' completed successfully!
+[2024:10:13 07:16:49.294 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddMudBlazorServices(this IServiceCollection, IConfiguration)"' was started...
+[2024:10:13 07:16:49.303 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddMudBlazorServices(this IServiceCollection, IConfiguration)"' completed successfully!
 info: Microsoft.Hosting.Lifetime[14]
       Now listening on: https://localhost:7206
 info: Microsoft.Hosting.Lifetime[14]
@@ -210,14 +421,35 @@ info: Microsoft.Hosting.Lifetime[0]
 
 ## ✔ Writing Valid Service Registration Expressions
 
-Each expression added to the `ServiceRegistrationExpressions` collection is validated before it is executed. The validation ensures that the expression is a valid extension method declared on `IServiceCollection`. This validation helps prevent runtime errors caused by incorrectly defined registration expressions. Here's some examples of a valid expressions:
+Every service registration expression added to a pipeline is **validated at the point it’s added**, not when the pipeline runs. This early validation step ensures that only legitimate service registration calls make it into the execution pipeline.
+
+A valid service registration expression must meet two criteria:
+- It must be a **method call expression**
+- The method must be an **extension method declared on `IServiceCollection`**
+
+This guarantees that the pipeline only contains actual DI registrations and prevents subtle runtime failures caused by accidental logic, assignments, or non-registration expressions slipping in.
+
+If an invalid expression is added, an exception is thrown immediately, keeping failures close to the source and easy to diagnose.
+
+### Examples of valid expressions
 
 ```csharp
-ServiceRegistrationExpressions.Add((services, config) => services.AddTransient<IMyService, MyService>());
-ServiceRegistrationExpressions.Add((services, config) => services.AddTransient(typeof(IMyService), typeof(MyService)));
-ServiceRegistrationExpressions.Add((services, config) => services.AddMvcCore());
-ServiceRegistrationExpressions.Add((services, config) => services.RegisterOptions<MyOptions>(config));
+AddRegistration((services, config) =>
+    services.AddTransient<IMyService, MyService>());
+
+AddRegistration((services, config) =>
+    services.AddTransient(typeof(IMyService), typeof(MyService)));
+
+AddRegistration((services, config) =>
+    services.AddMvcCore());
+
+AddRegistration((services, config) =>
+    services.RegisterOptions<MyOptions>(config));
 ```
+
+Custom extension methods are fully supported, as long as they extend `IServiceCollection`. This makes it easy to encapsulate complex registrations behind well-named helpers while still benefiting from validation and startup logging.
+
+By enforcing these rules consistently, StartupOrchestration.NET keeps service composition predictable, explicit, and safe.
 
 ---
 

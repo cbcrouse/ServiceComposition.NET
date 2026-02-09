@@ -30,7 +30,7 @@ jobs:
   
     - name: Reset Origin
       run: |
-        git remote set-url origin "https://cbcrouse:${{ secrets.GITHUBACCESSTOKEN }}@github.com/cbcrouse/StartupOrchestration.NET.git"
+        git remote set-url origin "https://cbcrouse:${{ secrets.GITHUBACCESSTOKEN }}@github.com/cbcrouse/ServiceComposition.NET.git"
         git checkout ${{ github.ref_name }}
 
     - name: Install Versioning.NET
@@ -53,16 +53,16 @@ jobs:
       - name: Setup .NET Core SDK
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '7.x'
+          dotnet-version: '10.x'
 
       - name: Restore NuGet packages
-        run: dotnet restore src/StartupOrchestration.NET/StartupOrchestration.NET.csproj
+        run: dotnet restore src/ServiceComposition.NET/ServiceComposition.NET.csproj
 
       - name: Pack project
-        run: dotnet pack src/StartupOrchestration.NET/StartupOrchestration.NET.csproj --configuration Release --no-restore /m
+        run: dotnet pack src/ServiceComposition.NET/ServiceComposition.NET.csproj --configuration Release --no-restore /m
 
       - name: Publish
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
           NUGET_SOURCE: https://api.nuget.org/v3/index.json
-        run: dotnet nuget push "src/StartupOrchestration.NET/bin/Release/*.nupkg" --skip-duplicate --api-key $NUGET_API_KEY --source $NUGET_SOURCE
+        run: dotnet nuget push "src/ServiceComposition.NET/bin/Release/*.nupkg" --skip-duplicate --api-key $NUGET_API_KEY --source $NUGET_SOURCE

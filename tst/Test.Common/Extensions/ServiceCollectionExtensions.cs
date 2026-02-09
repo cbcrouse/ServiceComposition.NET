@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace StartupOrchestration.NET.IntegrationTests.TestClasses;
+namespace Test.Common.Extensions;
 
 public static class ServiceCollectionExtensions
 {
