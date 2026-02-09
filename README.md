@@ -1,70 +1,72 @@
-# StartupOrchestration.NET
+# ServiceComposition.NET
 
-[![Main Status](https://github.com/cbcrouse/StartupOrchestration.NET/actions/workflows/dotnet.main.status.yml/badge.svg)](https://github.com/cbcrouse/StartupOrchestration.NET/actions/workflows/dotnet.main.status.yml) [![NuGet Downloads](https://img.shields.io/nuget/dt/StartupOrchestration.NET)](https://www.nuget.org/stats/packages/StartupOrchestration.NET?groupby=Version) [![NuGet Version](https://img.shields.io/nuget/v/StartupOrchestration.NET)](https://www.nuget.org/packages/StartupOrchestration.NET) [![codecov](https://codecov.io/gh/cbcrouse/StartupOrchestration.NET/branch/main/graph/badge.svg?token=XVPL3HNHDG)](https://codecov.io/gh/cbcrouse/StartupOrchestration.NET) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cbcrouse_StartupOrchestration.NET&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=cbcrouse_StartupOrchestration.NET)
+[![Main Status](https://github.com/cbcrouse/ServiceComposition.NET/actions/workflows/dotnet.main.status.yml/badge.svg)](https://github.com/cbcrouse/ServiceComposition.NET/actions/workflows/dotnet.main.status.yml) [![NuGet Downloads](https://img.shields.io/nuget/dt/ServiceComposition.NET)](https://www.nuget.org/stats/packages/ServiceComposition.NET?groupby=Version) [![NuGet Version](https://img.shields.io/nuget/v/ServiceComposition.NET)](https://www.nuget.org/packages/ServiceComposition.NET) [![codecov](https://codecov.io/gh/cbcrouse/ServiceComposition.NET/branch/main/graph/badge.svg?token=XVPL3HNHDG)](https://codecov.io/gh/cbcrouse/ServiceComposition.NET) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cbcrouse_ServiceComposition.NET&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=cbcrouse_ServiceComposition.NET)
 
 ## 🔍 Overview
 
-StartupOrchestration.NET is a lightweight service composition library for .NET applications that need a clear boundary between *defining* service registrations and *executing* them at startup.
+ServiceComposition.NET is a lightweight service composition library for .NET applications that need a clear boundary between **defining service registrations** and **executing them at startup**.
 
-The library is built around two simple ideas:
+The library introduces two simple building blocks:
 
-- **Service registration pipelines**, which define an ordered set of service registrations
-- **Composition roots**, which execute those pipelines using service and configuration objects supplied by the host
+- **Service registration pipelines**, which define an ordered set of service registrations  
+- **Service composition roots**, which execute those registrations using services and configuration supplied by the host  
 
-Instead of letting presentation layers control or mix infrastructure registrations, StartupOrchestration.NET enforces a predictable startup flow. Core registrations always run first, and presentation-specific services are added afterward. This guarantees consistent ordering and prevents accidental coupling between layers.
+This structure enforces a predictable startup flow. Foundational registrations run first, and presentation-specific services are added afterward. That ordering is explicit and consistent, which helps prevent accidental coupling between layers and makes startup behavior easier to understand.
 
-The library does not own configuration, hosting, or application startup. Those concerns stay with the host. StartupOrchestration.NET focuses solely on composing services in a controlled, testable way that works across different application types and hosting models.
+ServiceComposition.NET does **not** own configuration, hosting, or application startup. Those responsibilities remain with the host. The library focuses solely on composing services in a controlled, testable way that works across different application types and hosting models.
 
-The result is a startup process that is easier to understand, easier to test, and easier to maintain as applications grow.
+The result is startup code that is easier to understand, easier to test, and easier to maintain as applications grow.
 
 ---
 
 ## ✅ Features
 
-- Defines an explicit, ordered pipeline for service registrations, ensuring core infrastructure services are always registered before presentation-specific services.
+- Defines an explicit, ordered pipeline for service registrations, ensuring foundational services are always registered before presentation-specific services.
 - Keeps service registration logic independent of any hosting model, startup pattern, or presentation framework.
-- Allows infrastructure and application layers to register services without referencing `Startup`, `Program`, or other presentation-layer constructs.
-- Uses expression-based service registrations that are validated up front and executed lazily during application startup.
-- Supports both configuration-aware and configuration-free registrations, without forcing all registrations to depend on `IConfiguration`.
-- Leaves ownership of `IServiceCollection` and `IConfiguration` with the host, avoiding hidden behavior and making startup behavior predictable.
-- Emits detailed startup logging for each registration, showing execution order and surfacing failures clearly.
-- Works anywhere `IServiceCollection` and `IConfiguration` are used for service registration, regardless of hosting model or application type.
+- Allows application and infrastructure layers to register services without referencing `Program`, `Startup`, or other presentation-layer constructs.
+- Uses expression-based service registrations that are validated when added and executed later during startup.
+- Supports both configuration-aware and configuration-free registrations without forcing all registrations to depend on `IConfiguration`.
+- Leaves ownership of `IServiceCollection` and `IConfiguration` with the host, keeping startup behavior explicit and predictable.
+- Emits detailed startup logging for each registration, including execution order and failures.
+- Works anywhere `IServiceCollection` and `IConfiguration` are used for service registration in a .NET application.
 - Improves testability by allowing service composition to be executed directly against a service collection without starting a full host.
 
 ---
 
 ## 👤 Audience
 
-StartupOrchestration.NET is designed for .NET developers who want clearer boundaries around service registration as their applications grow.
+ServiceComposition.NET is intended for .NET developers who want clearer structure and stronger boundaries around service registration as their applications grow.
 
-If your application is starting to accumulate startup logic spread across `Program.cs`, extension methods, and infrastructure projects—and it’s becoming harder to see *what gets registered, when, and why*—this library helps bring that under control.
+It is especially useful when startup logic begins to spread across `Program.cs`, extension methods, and infrastructure projects, making it harder to understand what is registered, in what order, and under which conditions.
 
-It’s a good fit if you:
+This library is a good fit if you:
 
 - Maintain multiple applications or hosts that share a common application or infrastructure layer  
 - Want to keep service registration logic out of presentation-specific startup code  
-- Prefer explicit, testable startup composition over large, opaque startup methods  
-- Care about startup visibility and want trace-level insight into registration order and failures  
+- Prefer explicit, testable startup composition over large or implicit startup methods  
+- Need visibility into registration order and early startup failures  
 
-StartupOrchestration.NET works equally well for web apps, background services, console applications, and test hosts—anywhere `IServiceCollection` and `IConfiguration` are used. It does **not** require Clean Architecture, but it aligns naturally with layered designs where startup composition is treated as a boundary concern.
+ServiceComposition.NET works well for web applications, minimal APIs, background services, console applications, and test hosts—anywhere `IServiceCollection` and `IConfiguration` are used.
 
-For very small or throwaway applications, the added structure may not be necessary. But for systems that evolve, scale, or support multiple entry points, StartupOrchestration.NET provides a clear, maintainable way to organize startup logic without coupling it to a specific hosting model.
+It does not require Clean Architecture, but it aligns naturally with layered designs where service composition is treated as a boundary concern.
+
+For very small or short-lived applications, the additional structure may not be necessary. For systems that evolve over time or support multiple entry points, the library provides a clear and maintainable way to organize startup logic without coupling it to a specific hosting model.
 
 ---
 
 ## 📦 Getting Started
 
-You can install the package via NuGet. Search for `StartupOrchestration.NET` or run the following command:
+You can install the package via NuGet. Search for `ServiceComposition.NET` or run the following command:
 
 ```sh
-dotnet add package StartupOrchestration.NET
+dotnet add package ServiceComposition.NET
 ```
 
 ---
 
 ## 🧑‍💻 Usage
 
-StartupOrchestration.NET is built around a simple idea:
+ServiceComposition.NET is built around a simple idea:
 
 **service registration should be explicit, ordered, testable, and independent of the hosting model.**
 
@@ -132,7 +134,7 @@ Each registration is expressed as:
 Expression<Action<IServiceCollection, IConfiguration>>
 ```
 
-This allows StartupOrchestration.NET to:
+This allows ServiceComposition.NET to:
 
 - Validate registrations up front  
 - Execute them in a predictable order  
@@ -277,13 +279,13 @@ This makes startup behavior easy to validate and understand in isolation.
 - No inheritance-based startup model  
 - No coupling to a specific hosting framework  
 
-StartupOrchestration.NET fits naturally anywhere `IServiceCollection` and `IConfiguration` are already in use.
+ServiceComposition.NET fits naturally anywhere `IServiceCollection` and `IConfiguration` are already in use.
 
 ---
 
 ## 🔌 ServiceRegistrationPipeline and ServiceCompositionRoot
 
-StartupOrchestration.NET is built around two core concepts: **pipelines** and **composition roots**.
+ServiceComposition.NET is built around two core concepts: **pipelines** and **composition roots**.
 
 ### ServiceRegistrationPipeline
 
@@ -315,7 +317,7 @@ This separation keeps startup logic explicit, predictable, and easy to reuse acr
 
 ## 📄 The Use of Expressions
 
-StartupOrchestration.NET uses **expression trees** to represent service registrations instead of executing registration logic immediately.
+ServiceComposition.NET uses **expression trees** to represent service registrations instead of executing registration logic immediately.
 
 Each service registration is captured as an  
 `Expression<Action<IServiceCollection, IConfiguration>>`  
@@ -364,7 +366,7 @@ This keeps startup logic modular, testable, and easy to reason about as applicat
 
 ### Startup Logging
 
-StartupOrchestration.NET includes first-class support for **startup-time logging** through the `StartupLogger` property on a service registration pipeline.
+ServiceComposition.NET includes first-class support for **startup-time logging** through the `StartupLogger` property on a service registration pipeline.
 
 Service registrations often run **before the application’s logging infrastructure is fully configured**. The `StartupLogger` exists specifically to cover this gap, giving you visibility into what happens during service composition—when failures are otherwise difficult to diagnose.
 
@@ -449,7 +451,7 @@ AddRegistration((services, config) =>
 
 Custom extension methods are fully supported, as long as they extend `IServiceCollection`. This makes it easy to encapsulate complex registrations behind well-named helpers while still benefiting from validation and startup logging.
 
-By enforcing these rules consistently, StartupOrchestration.NET keeps service composition predictable, explicit, and safe.
+By enforcing these rules consistently, ServiceComposition.NET keeps service composition predictable, explicit, and safe.
 
 ---
 

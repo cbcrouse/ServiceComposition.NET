@@ -1,4 +1,4 @@
-﻿namespace StartupOrchestration.NET.IntegrationTests.TestClasses;
+﻿namespace ServiceComposition.NET.IntegrationTests.TestClasses;
 
 public class TestOptions
 {

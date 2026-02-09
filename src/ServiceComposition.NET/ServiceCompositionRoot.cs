@@ -1,4 +1,4 @@
-﻿namespace StartupOrchestration.NET;
+﻿namespace ServiceComposition.NET;
 
 /// <summary>
 /// Serves as the composition root for the presentation layer by exposing a

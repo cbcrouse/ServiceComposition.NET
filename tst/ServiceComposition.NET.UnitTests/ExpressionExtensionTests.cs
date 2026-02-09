@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using StartupOrchestration.NET.UnitTests.TestClasses;
+using ServiceComposition.NET.UnitTests.TestClasses;
 using Test.Common.TestClasses;
 
-namespace StartupOrchestration.NET.UnitTests;
+namespace ServiceComposition.NET.UnitTests;
 
 public class ExpressionExtensionTests
 {

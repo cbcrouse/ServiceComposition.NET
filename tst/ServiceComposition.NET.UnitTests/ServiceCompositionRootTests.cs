@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using StartupOrchestration.NET.IntegrationTests.TestClasses;
-using StartupOrchestration.NET.UnitTests.TestClasses;
+using ServiceComposition.NET.IntegrationTests.TestClasses;
+using ServiceComposition.NET.UnitTests.TestClasses;
 
-namespace StartupOrchestration.NET.UnitTests;
+namespace ServiceComposition.NET.UnitTests;
 
 public class ServiceCompositionRootTests
 {

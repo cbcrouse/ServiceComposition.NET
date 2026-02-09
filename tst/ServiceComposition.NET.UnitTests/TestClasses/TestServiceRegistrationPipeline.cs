@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using StartupOrchestration.NET.IntegrationTests.TestClasses;
+using ServiceComposition.NET.IntegrationTests.TestClasses;
 using Test.Common.Extensions;
 
-namespace StartupOrchestration.NET.UnitTests.TestClasses;
+namespace ServiceComposition.NET.UnitTests.TestClasses;
 
 internal sealed class TestServiceRegistrationPipeline : ServiceRegistrationPipeline
 {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Test.Common.TestClasses;
 
-namespace StartupOrchestration.NET.IntegrationTests.TestClasses;
+namespace ServiceComposition.NET.IntegrationTests.TestClasses;
 
 internal sealed class TestServiceCompositionRoot : ServiceCompositionRoot<TestServiceRegistrationPipeline>
 {

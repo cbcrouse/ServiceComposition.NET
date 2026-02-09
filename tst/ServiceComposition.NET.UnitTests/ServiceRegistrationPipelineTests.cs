@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using StartupOrchestration.NET.UnitTests.TestClasses;
+using ServiceComposition.NET.UnitTests.TestClasses;
 
-namespace StartupOrchestration.NET.UnitTests;
+namespace ServiceComposition.NET.UnitTests;
 
 public class ServiceRegistrationPipelineTests
 {
@@ -161,8 +161,8 @@ public class ServiceRegistrationPipelineTests
         var pipeline = new TestServiceRegistrationPipelineWithLogger();
         Expression<Action<IServiceCollection, IConfiguration>> expression = (x, y) => x.AddScoped(typeof(ITestCoreService), typeof(TestCoreService));
         pipeline.AddRegistration(expression);
-        var expectedStartedMessage = "'AddScoped(this IServiceCollection, Type<StartupOrchestration.NET.UnitTests.TestClasses.ITestCoreService>, Type<StartupOrchestration.NET.UnitTests.TestClasses.TestCoreService>)' was started...";
-        var expectedCompletedMessage = "'AddScoped(this IServiceCollection, Type<StartupOrchestration.NET.UnitTests.TestClasses.ITestCoreService>, Type<StartupOrchestration.NET.UnitTests.TestClasses.TestCoreService>)' completed successfully!";
+        var expectedStartedMessage = "'AddScoped(this IServiceCollection, Type<ServiceComposition.NET.UnitTests.TestClasses.ITestCoreService>, Type<ServiceComposition.NET.UnitTests.TestClasses.TestCoreService>)' was started...";
+        var expectedCompletedMessage = "'AddScoped(this IServiceCollection, Type<ServiceComposition.NET.UnitTests.TestClasses.ITestCoreService>, Type<ServiceComposition.NET.UnitTests.TestClasses.TestCoreService>)' completed successfully!";
 
         pipeline.Execute(serviceCollection, configuration);
 

@@ -1,4 +1,4 @@
-﻿namespace StartupOrchestration.NET;
+﻿namespace ServiceComposition.NET;
 
 /// <summary>
 /// Represents an ordered pipeline for registering application services and dependencies

@@ -1,3 +1,3 @@
-﻿namespace StartupOrchestration.NET.UnitTests.TestClasses;
+﻿namespace ServiceComposition.NET.UnitTests.TestClasses;
 
 internal class TestPresentationService : ITestPresentationService { }

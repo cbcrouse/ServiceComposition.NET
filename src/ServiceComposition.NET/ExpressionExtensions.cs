@@ -1,4 +1,4 @@
-﻿namespace StartupOrchestration.NET;
+﻿namespace ServiceComposition.NET;
 
 /// <summary>
 /// Provides extension methods for working with <see cref="Expression"/> objects.

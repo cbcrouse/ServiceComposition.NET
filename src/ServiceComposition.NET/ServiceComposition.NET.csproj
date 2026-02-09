@@ -9,13 +9,15 @@
     <IsTestProject>false</IsTestProject>
     <IsPackable>true</IsPackable>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageId>StartupOrchestration.NET</PackageId>
+    <PackageId>ServiceComposition.NET</PackageId>
     <VersionPrefix>1.1.0</VersionPrefix>
     <Authors>Casey Crouse</Authors>
     <Company>NGEXDEV, LLC</Company>
-    <Description>A .NET library that provides flexible startup orchestration for dependency injection in multiple presentation layer types. Includes a base class for implementing service registration logic and a presentation orchestrator class for initializing the service collection and configuration instances.</Description>
-    <PackageProjectUrl>https://github.com/cbcrouse/StartupOrchestration.NET</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/cbcrouse/StartupOrchestration.NET</RepositoryUrl>
+    <Description>
+      A lightweight .NET library for explicit, ordered service registration. Define reusable service registration pipelines independent of hosting concerns, and execute them from any presentation layer using IServiceCollection and IConfiguration.
+    </Description>
+    <PackageProjectUrl>https://github.com/cbcrouse/ServiceComposition.NET</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/cbcrouse/ServiceComposition.NET</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 

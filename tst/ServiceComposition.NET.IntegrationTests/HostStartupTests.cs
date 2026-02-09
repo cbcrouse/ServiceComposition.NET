@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using StartupOrchestration.NET.IntegrationTests.TestClasses;
+using ServiceComposition.NET.IntegrationTests.TestClasses;
 using Test.Common.TestClasses;
 
-namespace StartupOrchestration.NET.IntegrationTests;
+namespace ServiceComposition.NET.IntegrationTests;
 
 public class HostStartupTests : IClassFixture<WebApplicationFactory<Program>>
 {

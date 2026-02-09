@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace StartupOrchestration.NET.UnitTests.TestClasses
+namespace ServiceComposition.NET.UnitTests.TestClasses
 {
     internal static class TestExtensions
     {

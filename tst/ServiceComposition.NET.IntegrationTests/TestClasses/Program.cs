@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using StartupOrchestration.NET.IntegrationTests.TestClasses;
+using ServiceComposition.NET.IntegrationTests.TestClasses;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

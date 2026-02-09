@@ -1,4 +1,4 @@
-﻿namespace StartupOrchestration.NET;
+﻿namespace ServiceComposition.NET;
 
 /// <summary>
 /// Provides shared infrastructure for managing a validated, ordered collection

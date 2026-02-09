@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Test.Common.Extensions;
 
-namespace StartupOrchestration.NET.IntegrationTests.TestClasses;
+namespace ServiceComposition.NET.IntegrationTests.TestClasses;
 
 internal class TestServiceRegistrationPipeline : ServiceRegistrationPipeline
 {
