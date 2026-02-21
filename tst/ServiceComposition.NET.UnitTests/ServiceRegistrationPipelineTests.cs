@@ -27,7 +27,7 @@ public class ServiceRegistrationPipelineTests
         var pipeline = new TestServiceRegistrationPipeline();
 
         var ex = Assert.Throws<ArgumentException>(() => pipeline.AddRegistration((x, y) => Expression.Empty()));
-        var ex2 = Assert.Throws<ArgumentException>(() => pipeline.AddRegistration((x) => Expression.Empty()));
+        var ex2 = Assert.Throws<ArgumentException>(() => pipeline.AddRegistration(x => Expression.Empty()));
 
         var  expectedMessage = "Only extension methods declared on IServiceCollection are allowed as service registration expressions.";
         Assert.Contains(expectedMessage, ex.Message);
@@ -46,7 +46,7 @@ public class ServiceRegistrationPipelineTests
     }
 
     [Fact]
-    public void Execute_LogsSuccess_WithStartupLogger()
+    public void Execute_LogsSuccess_WithLogger()
     {
         var serviceCollection = new ServiceCollection();
         var configuration = new ConfigurationBuilder().Build();
@@ -76,7 +76,7 @@ public class ServiceRegistrationPipelineTests
     }
 
     [Fact]
-    public void Execute_LogsFailure_WithStartupLogger()
+    public void Execute_LogsFailure_WithLogger()
     {
         var serviceCollection = new ServiceCollection();
         var configuration = new ConfigurationBuilder().Build();
@@ -222,5 +222,84 @@ public class ServiceRegistrationPipelineTests
         var configuration = new ConfigurationBuilder().Build();
 
         Assert.Throws<ArgumentNullException>(() => pipeline.Execute(null!, configuration));
+    }
+
+    [Fact]
+    public void Execute_LogsServiceRegistration_WithMethodCallArgument()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        var pipeline = new TestServiceRegistrationPipelineWithLogger();
+
+        Expression<Action<IServiceCollection, IConfiguration>> expression =
+            (s, c) => s.AddWithMethodCall(MethodCallArgumentExtensions.GetValue());
+
+        pipeline.AddRegistration(expression);
+
+        var expected = "'AddWithMethodCall(this IServiceCollection, String)' was started...";
+
+        pipeline.Execute(services, configuration);
+
+        pipeline.GetLogger().Verify(logger => logger.Log(
+                LogLevel.Trace,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) =>
+                    o.ToString()!.Contains(expected)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Once);
+    }
+
+    [Fact]
+    public void Execute_LogsServiceRegistration_WithTypeBinaryExpression()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        var pipeline = new TestServiceRegistrationPipelineWithLogger();
+
+        object obj = "hello";
+
+        Expression<Action<IServiceCollection, IConfiguration>> expression =
+            (s, c) => s.AddWithTypeCheck(obj is string);
+
+        pipeline.AddRegistration(expression);
+
+        var expected = "'AddWithTypeCheck(this IServiceCollection, Boolean)' was started...";
+
+        pipeline.Execute(services, configuration);
+
+        pipeline.GetLogger().Verify(logger => logger.Log(
+                LogLevel.Trace,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((o, t) =>
+                    o.ToString()!.Contains(expected)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+            Times.Once);
+    }
+}
+
+internal static class MethodCallArgumentExtensions
+{
+    public static IServiceCollection AddWithMethodCall(
+        this IServiceCollection services,
+        string value)
+    {
+        return services;
+    }
+
+    public static string GetValue()
+    {
+        return "value";
+    }
+}
+
+internal static class TypeBinaryArgumentExtensions
+{
+    public static IServiceCollection AddWithTypeCheck(
+        this IServiceCollection services,
+        bool condition)
+    {
+        return services;
     }
 }

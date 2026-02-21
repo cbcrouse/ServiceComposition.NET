@@ -6,28 +6,23 @@
 /// </summary>
 /// <remarks>
 /// This type centralizes the mechanics for collecting, validating, and normalizing
-/// service registration expressions without performing any execution. It exists to
-/// avoid duplication of expression management behavior across higher-level
-/// composition types, such as service registration pipelines and presentation-layer
-/// composition roots.
+/// service registration expressions without executing them.
 /// <para>
-/// All expressions added to this collection are validated at the point of mutation
-/// and normalized into a configuration-aware form
-/// (<c>Expression&lt;Action&lt;IServiceCollection, IConfiguration&gt;&gt;</c>). Expressions
-/// that do not require configuration are lifted into this canonical shape without
-/// being compiled or invoked.
+/// Expressions are validated at the point of addition to ensure they represent
+/// legitimate extension method calls targeting <see cref="IServiceCollection"/>.
+/// Invalid expressions are rejected immediately and never stored.
 /// </para>
 /// <para>
-/// This class intentionally contains no execution logic and does not assume a
-/// particular hosting model, startup lifecycle, or ownership of configuration or
-/// service collection instances. Execution semantics are the responsibility of
-/// higher-level abstractions.
+/// All stored expressions are normalized into a configuration-aware canonical form:
+/// <c>Expression&lt;Action&lt;IServiceCollection, IConfiguration&gt;&gt;</c>.
+/// Expressions that do not require configuration are lifted into this shape
+/// without being compiled or executed.
 /// </para>
 /// <para>
-/// Expressions managed by this collection are expected to represent service
-/// registration operations performed against <see cref="IServiceCollection"/>,
-/// such as calls to <c>AddTransient</c>, <c>AddScoped</c>, <c>AddSingleton</c>, or
-/// valid extension methods defined for <see cref="IServiceCollection"/>.
+/// This class contains no execution logic and does not assume ownership of
+/// <see cref="IServiceCollection"/> or <see cref="IConfiguration"/> instances.
+/// Execution semantics are the responsibility of higher-level abstractions,
+/// such as <see cref="ServiceRegistrationPipeline"/>.
 /// </para>
 /// <para>
 /// This type is infrastructure support for higher-level composition abstractions
@@ -42,32 +37,30 @@ public abstract class ServiceRegistrationExpressionCollection
     /// Gets the ordered collection of validated service registration expressions.
     /// </summary>
     /// <remarks>
-    /// The returned collection reflects the order in which expressions were added.
-    /// This ordering is preserved and relied upon by consumers that execute the
-    /// expressions as part of a larger service composition process.
+    /// The returned collection preserves the order in which expressions were added.
+    /// Ordering is significant and relied upon by consumers that execute the
+    /// collection as part of a service composition pipeline.
     /// </remarks>
     protected IReadOnlyList<Expression<Action<IServiceCollection, IConfiguration>>> Expressions => _expressions;
 
     /// <summary>
     /// Adds a service registration expression that requires access to configuration.
     /// </summary>
-    /// <remarks>
-    /// The provided expression must represent a valid service registration call
-    /// against <see cref="IServiceCollection"/>, such as <c>AddTransient</c>,
-    /// <c>AddScoped</c>, <c>AddSingleton</c>, or a custom extension method defined
-    /// for <see cref="IServiceCollection"/>.
-    /// <para>
-    /// Expressions are validated at the point of addition and are not compiled or
-    /// executed until a higher-level component invokes the service registration
-    /// pipeline.
-    /// </para>
-    /// </remarks>
     /// <param name="expression">
-    /// The service registration expression to add.
+    /// A lambda expression representing a service registration operation.
     /// </param>
-    /// <exception cref="ArgumentException">
-    /// Thrown when the expression does not represent a valid service registration call.
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="expression"/> is <see langword="null"/>.
     /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the expression does not represent a valid
+    /// <see cref="IServiceCollection"/> extension method call.
+    /// </exception>
+    /// <remarks>
+    /// The expression must represent a single extension method call targeting
+    /// <see cref="IServiceCollection"/>. Validation occurs immediately and the
+    /// expression is not compiled or executed at this stage.
+    /// </remarks>
     public void AddRegistration(Expression<Action<IServiceCollection, IConfiguration>> expression)
     {
         expression.ValidateServiceRegistration();
@@ -75,25 +68,24 @@ public abstract class ServiceRegistrationExpressionCollection
     }
 
     /// <summary>
-    /// Adds a service registration expression that does not require access to configuration.
+    /// Adds a service registration expression that does not require configuration.
     /// </summary>
-    /// <remarks>
-    /// The provided expression must represent a valid service registration call
-    /// against <see cref="IServiceCollection"/>, such as <c>AddTransient</c>,
-    /// <c>AddScoped</c>, <c>AddSingleton</c>, or a custom extension method defined
-    /// for <see cref="IServiceCollection"/>.
-    /// <para>
-    /// The expression is lifted into a configuration-aware form without being
-    /// compiled or executed. Execution occurs only when the service registration
-    /// pipeline is invoked.
-    /// </para>
-    /// </remarks>
     /// <param name="expression">
-    /// The service registration expression to add.
+    /// A lambda expression representing a service registration operation.
     /// </param>
-    /// <exception cref="ArgumentException">
-    /// Thrown when the expression does not represent a valid service registration call.
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="expression"/> is <see langword="null"/>.
     /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the expression does not represent a valid
+    /// <see cref="IServiceCollection"/> extension method call.
+    /// </exception>
+    /// <remarks>
+    /// The expression is validated and then lifted into a configuration-aware
+    /// canonical form without being compiled or executed. The lifted expression
+    /// preserves the original method call and defers execution until a
+    /// <see cref="ServiceRegistrationPipeline"/> invokes it.
+    /// </remarks>
     public void AddRegistration(Expression<Action<IServiceCollection>> expression)
     {
         expression.ValidateServiceRegistration();
@@ -113,16 +105,26 @@ public abstract class ServiceRegistrationExpressionCollection
     }
 
     /// <summary>
-    /// Adds multiple service registration expressions that require access to configuration.
+    /// Adds multiple service registration expressions that require configuration.
     /// </summary>
     /// <param name="expressions">
-    /// The collection of service registration expressions to add.
+    /// A sequence of service registration expressions to add.
     /// </param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="expressions"/> is <c>null</c>.
+    /// Thrown when <paramref name="expressions"/> is <see langword="null"/>.
     /// </exception>
-    public void AddRegistrations(IEnumerable<Expression<Action<IServiceCollection, IConfiguration>>> expressions)
+    /// <exception cref="ArgumentException">
+    /// Thrown when any expression in the sequence is invalid.
+    /// </exception>
+    /// <remarks>
+    /// Expressions are validated individually in the order provided.
+    /// If validation fails for any expression, no further expressions are added.
+    /// </remarks>
+    public void AddRegistrations(IEnumerable<Expression<Action<IServiceCollection, IConfiguration>>>? expressions)
     {
+        if (expressions is null)
+            throw new ArgumentNullException(nameof(expressions));
+
         foreach (var expression in expressions)
         {
             AddRegistration(expression);
@@ -130,20 +132,26 @@ public abstract class ServiceRegistrationExpressionCollection
     }
 
     /// <summary>
-    /// Adds multiple service registration expressions that do not require access to configuration.
+    /// Adds multiple service registration expressions that do not require configuration.
     /// </summary>
-    /// <remarks>
-    /// Each expression is lifted into a configuration-aware form without being
-    /// compiled or executed.
-    /// </remarks>
     /// <param name="expressions">
-    /// The collection of service registration expressions to add.
+    /// A sequence of service registration expressions to add.
     /// </param>
     /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="expressions"/> is <c>null</c>.
+    /// Thrown when <paramref name="expressions"/> is <see langword="null"/>.
     /// </exception>
-    public void AddRegistrations(IEnumerable<Expression<Action<IServiceCollection>>> expressions)
+    /// <exception cref="ArgumentException">
+    /// Thrown when any expression in the sequence is invalid.
+    /// </exception>
+    /// <remarks>
+    /// Each expression is validated and lifted into a configuration-aware form.
+    /// Execution remains deferred until a pipeline invokes the collection.
+    /// </remarks>
+    public void AddRegistrations(IEnumerable<Expression<Action<IServiceCollection>>>? expressions)
     {
+        if (expressions is null)
+            throw new ArgumentNullException(nameof(expressions));
+
         foreach (var expression in expressions)
         {
             AddRegistration(expression);

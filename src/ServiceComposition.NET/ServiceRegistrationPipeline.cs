@@ -20,10 +20,15 @@
 public abstract class ServiceRegistrationPipeline : ServiceRegistrationExpressionCollection
 {
     /// <summary>
-    /// This property provides access to a static instance of the <see cref="ILogger"/> interface that is used to log 
-    /// startup registrations that occur before the dependency injection (DI) container has been initialized.
+    /// Gets a logger used during pipeline execution.
     /// </summary>
-    protected abstract ILogger StartupLogger { get; }
+    /// <remarks>
+    /// This logger is intended for use during service registration execution,
+    /// when the application's dependency injection container has not yet been built.
+    /// Implementations are responsible for supplying a logger instance that does not
+    /// depend on services from the container.
+    /// </remarks>
+    protected abstract ILogger Logger { get; }
 
     /// <summary>
     /// Executes the service registration pipeline using the provided service collection
@@ -59,13 +64,13 @@ public abstract class ServiceRegistrationPipeline : ServiceRegistrationExpressio
 
             try
             {
-                StartupLogger.LogTrace("'{Expression}' was started...", expressionAsString);
+                Logger.LogTrace("'{Expression}' was started...", expressionAsString);
                 expression.Compile().Invoke(serviceCollection, configuration);
-                StartupLogger.LogTrace("'{Expression}' completed successfully!", expressionAsString);
+                Logger.LogTrace("'{Expression}' completed successfully!", expressionAsString);
             }
             catch (Exception exception)
             {
-                StartupLogger.LogTrace(exception, "'{Expression}' failed with an unhandled exception.", expressionAsString);
+                Logger.LogTrace(exception, "'{Expression}' failed with an unhandled exception.", expressionAsString);
                 throw;
             }
         }
@@ -91,26 +96,24 @@ public abstract class ServiceRegistrationPipeline : ServiceRegistrationExpressio
     protected virtual string GetExpressionAsString(Expression<Action<IServiceCollection, IConfiguration>> expression)
     {
         var methodCall = (MethodCallExpression)expression.Body;
-
-        // Get the method name
+        MethodInfo method = methodCall.Method;
         string methodName = methodCall.Method.Name;
 
         // Handle generic arguments (for cases like AddScoped<IMyService, MyService>)
         string genericArgs = string.Empty;
-        if (methodCall.Method.IsGenericMethod)
+        if (method.IsGenericMethod)
         {
-            var genericArguments = methodCall.Method.GetGenericArguments()
+            var genericArguments = method.GetGenericArguments()
                 .Select(arg => arg.Name)
                 .ToArray();
             genericArgs = $"<{string.Join(", ", genericArguments)}>";
         }
 
         // Handle normal parameters (for cases like AddScoped(typeof(IMyService), typeof(MyService)))
-        bool isExtensionMethod = methodCall.Method.IsDefined(typeof(System.Runtime.CompilerServices.ExtensionAttribute), false);
         var normalArgs = methodCall.Arguments
             .Select((arg, index) =>
             {
-                if (index == 0 && isExtensionMethod)
+                if (index == 0 && method.IsExtensionMethod())
                 {
                     return $"this {arg.Type.Name}";
                 }

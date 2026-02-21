@@ -8,7 +8,7 @@ namespace ServiceComposition.NET.UnitTests.TestClasses;
 
 internal sealed class TestServiceRegistrationPipeline : ServiceRegistrationPipeline
 {
-    protected override ILogger StartupLogger => NullLogger.Instance;
+    protected override ILogger Logger => NullLogger.Instance;
 
     public TestServiceRegistrationPipeline()
     {
