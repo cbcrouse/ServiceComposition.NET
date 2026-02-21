@@ -7,7 +7,7 @@ namespace ServiceComposition.NET.IntegrationTests.TestClasses;
 internal class TestServiceRegistrationPipeline : ServiceRegistrationPipeline
 {
     /// <inheritdoc />
-    protected override ILogger StartupLogger => NullLogger.Instance;
+    protected override ILogger Logger => NullLogger.Instance;
 
     public TestServiceRegistrationPipeline()
     {

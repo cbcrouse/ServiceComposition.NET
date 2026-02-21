@@ -12,21 +12,31 @@ public class ExpressionExtensionTests
     // ------------------------------------------------------------
 
     [Fact]
-    public void ValidateServiceRegistration_WithConfiguration_Throws_WhenExpressionIsNotMethodCall()
+    public void ValidateServiceRegistration_WithConfiguration_Throws_WhenExpressionIsNull()
     {
         Expression<Action<IServiceCollection, IConfiguration>> registrationExpression = null!;
 
-        var ex = Assert.Throws<ArgumentException>(() => registrationExpression.ValidateServiceRegistration());
+        var ex = Assert.Throws<ArgumentNullException>(() => registrationExpression.ValidateServiceRegistration());
 
-        Assert.Contains("Registration expression must be a call to a method on IServiceCollection.", ex.Message);
+        Assert.Contains($"{nameof(registrationExpression)}", ex.Message);
     }
 
     [Fact]
-    public void ValidateServiceRegistration_WithConfiguration_Throws_WhenMethodIsNotIServiceCollectionExtension()
+    public void ValidateServiceRegistration_Throws_WhenExtensionDoesNotTargetIServiceCollection()
     {
         Expression<Action<IServiceCollection, IConfiguration>> registrationExpression = (_, config) => config.ConfigurationExtension();
 
         var ex = Assert.Throws<ArgumentException>(() => registrationExpression.ValidateServiceRegistration());
+
+        Assert.Contains("Only extension methods declared on IServiceCollection are allowed", ex.Message);
+    }
+
+    [Fact]
+    public void ValidateServiceRegistration_Throws_WhenMethodIsInstanceMethod()
+    {
+        Expression<Action<IServiceCollection, IConfiguration>> expr = (services, config) => services.ToString();
+
+        var ex = Assert.Throws<ArgumentException>(() => expr.ValidateServiceRegistration());
 
         Assert.Contains("Only extension methods declared on IServiceCollection are allowed", ex.Message);
     }
@@ -43,26 +53,58 @@ public class ExpressionExtensionTests
         Assert.Null(Record.Exception(() => customExtension.ValidateServiceRegistration()));
     }
 
+    [Fact]
+    public void ValidateServiceRegistration_Throws_WhenExpressionIsInvocation()
+    {
+        Expression<Action<IServiceCollection, IConfiguration>> inner =
+            (s, c) => s.AddTransient<IService, Service>();
+
+        var serviceParam = Expression.Parameter(typeof(IServiceCollection), "s");
+        var configParam = Expression.Parameter(typeof(IConfiguration), "c");
+
+        var invocation = Expression.Invoke(inner, serviceParam, configParam);
+
+        var lambda = Expression.Lambda<Action<IServiceCollection, IConfiguration>>(
+            invocation,
+            serviceParam,
+            configParam);
+
+        var ex = Assert.Throws<ArgumentException>(() =>
+            lambda.ValidateServiceRegistration());
+
+        Assert.Contains("single method call", ex.Message);
+    }
+
     // ------------------------------------------------------------
     // Configuration-free overload
     // ------------------------------------------------------------
 
     [Fact]
-    public void ValidateServiceRegistration_WithoutConfiguration_Throws_WhenExpressionIsNotMethodCall()
+    public void ValidateServiceRegistration_WithoutConfiguration_Throws_WhenExpressionIsNull()
     {
         Expression<Action<IServiceCollection>> registrationExpression = null!;
 
-        var ex = Assert.Throws<ArgumentException>(() => registrationExpression.ValidateServiceRegistration());
+        var ex = Assert.Throws<ArgumentNullException>(() => registrationExpression.ValidateServiceRegistration());
 
-        Assert.Contains("Registration expression must be a call to a method on IServiceCollection.", ex.Message);
+        Assert.Contains($"{nameof(registrationExpression)}", ex.Message);
     }
 
     [Fact]
-    public void ValidateServiceRegistration_WithoutConfiguration_Throws_WhenMethodIsNotIServiceCollectionExtension()
+    public void ValidateServiceRegistration_WithoutConfiguration_Throws_WhenExtensionDoesNotTargetIServiceCollection()
     {
         Expression<Action<IServiceCollection>> registrationExpression = services => InvalidStaticMethod();
 
         var ex = Assert.Throws<ArgumentException>(() => registrationExpression.ValidateServiceRegistration());
+
+        Assert.Contains("Only extension methods declared on IServiceCollection are allowed", ex.Message);
+    }
+
+    [Fact]
+    public void ValidateServiceRegistration_WithoutConfiguration_Throws_WhenMethodIsInstanceMethod()
+    {
+        Expression<Action<IServiceCollection>> expr = services => services.ToString();
+
+        var ex = Assert.Throws<ArgumentException>(() => expr.ValidateServiceRegistration());
 
         Assert.Contains("Only extension methods declared on IServiceCollection are allowed", ex.Message);
     }
@@ -77,6 +119,26 @@ public class ExpressionExtensionTests
         Assert.Null(Record.Exception(() => generic.ValidateServiceRegistration()));
         Assert.Null(Record.Exception(() => nonGeneric.ValidateServiceRegistration()));
         Assert.Null(Record.Exception(() => customExtension.ValidateServiceRegistration()));
+    }
+
+    [Fact]
+    public void ValidateServiceRegistration_WithoutConfiguration_Throws_WhenExpressionIsInvocation()
+    {
+        Expression<Action<IServiceCollection>> inner =
+            s => s.AddTransient<IService, Service>();
+
+        var parameter = Expression.Parameter(typeof(IServiceCollection), "s");
+
+        var invocation = Expression.Invoke(inner, parameter);
+
+        var lambda = Expression.Lambda<Action<IServiceCollection>>(
+            invocation,
+            parameter);
+
+        var ex = Assert.Throws<ArgumentException>(() =>
+            lambda.ValidateServiceRegistration());
+
+        Assert.Contains("single method call", ex.Message);
     }
 
     // ------------------------------------------------------------

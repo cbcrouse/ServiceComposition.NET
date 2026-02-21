@@ -6,7 +6,7 @@ internal sealed class TestServiceRegistrationPipelineWithLogger : ServiceRegistr
 {
     private readonly Mock<ILogger> _mockLogger = new();
 
-    protected override ILogger StartupLogger => _mockLogger.Object;
+    protected override ILogger Logger => _mockLogger.Object;
 
     internal Mock<ILogger> GetLogger()
     {

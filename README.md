@@ -154,11 +154,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-public sealed class CoreServiceRegistrationPipeline : ServiceRegistrationPipeline
+public sealed class AppServiceRegistrationPipeline : ServiceRegistrationPipeline
 {
-    protected override ILogger StartupLogger => NullLogger.Instance;
+    protected override ILogger Logger => NullLogger.Instance;
 
-    public CoreServiceRegistrationPipeline()
+    public AppServiceRegistrationPipeline()
     {
         AddRegistration((services, config) =>
             services.RegisterConfiguredOptions<MyOptions>(config));
@@ -183,7 +183,7 @@ To define one, inherit from `ServiceCompositionRoot<TPipeline>` and add registra
 using Microsoft.Extensions.DependencyInjection;
 
 public sealed class WebAppServiceComposition
-    : ServiceCompositionRoot<CoreServiceRegistrationPipeline>
+    : ServiceCompositionRoot<AppServiceRegistrationPipeline>
 {
     public WebAppServiceComposition()
     {
@@ -196,7 +196,7 @@ public sealed class WebAppServiceComposition
 }
 ```
 
-The generic pipeline type (`CoreServiceRegistrationPipeline`) defines the shared registrations that always run first. Any registrations added here are applied afterward.
+The generic pipeline type (`AppServiceRegistrationPipeline`) defines the shared registrations that always run first. Any registrations added here are applied afterward.
 
 ---
 
@@ -262,7 +262,7 @@ var configuration = new ConfigurationBuilder()
     })
     .Build();
 
-var pipeline = new CoreServiceRegistrationPipeline();
+var pipeline = new AppServiceRegistrationPipeline();
 pipeline.Execute(services, configuration);
 
 var provider = services.BuildServiceProvider();
@@ -366,11 +366,11 @@ The result is a clean, explicit service composition flow where:
 
 This keeps startup logic modular, testable, and easy to reason about as applications grow.
 
-### Startup Logging
+### Pipeline Logging
 
-ServiceComposition.NET includes first-class support for **startup-time logging** through the `StartupLogger` property on a service registration pipeline.
+ServiceComposition.NET includes first-class support for **service registration logging** through the `Logger` property on a service registration pipeline.
 
-Service registrations often run **before the application’s logging infrastructure is fully configured**. The `StartupLogger` exists specifically to cover this gap, giving you visibility into what happens during service composition—when failures are otherwise difficult to diagnose.
+Service registrations often run **before the application’s logging infrastructure is fully configured**. The `Logger` exists specifically to cover this gap, giving you visibility into what happens during service composition—when failures are otherwise difficult to diagnose.
 
 As each registration expression is executed, the pipeline emits trace-level log entries that indicate:
 - When a registration starts
@@ -379,7 +379,7 @@ As each registration expression is executed, the pipeline emits trace-level log 
 
 This makes it easy to see the exact order in which services are registered and to pinpoint the registration that caused a startup failure.
 
-You can back `StartupLogger` with any logging implementation you prefer, including Serilog, NLog, or the built-in logging abstractions. Logs can be written to the console, files, or external systems, depending on how early diagnostics need to be captured.
+You can back `Logger` with any logging implementation you prefer, including Serilog, NLog, or the built-in logging abstractions. Logs can be written to the console, files, or external systems, depending on how early diagnostics need to be captured.
 
 Startup logging is especially useful when:
 - Diagnosing failures that occur before the host fully starts
@@ -391,26 +391,26 @@ By making startup behavior observable, the library helps reduce guesswork and sh
 #### Example Log Output
 
 ```log
-[2024:10:13 07:16:48.999 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddOptions(this IServiceCollection)"' was started...
-[2024:10:13 07:16:49.043 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddOptions(this IServiceCollection)"' completed successfully!
-[2024:10:13 07:16:49.045 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsFactory`1[TOptions]>)"' was started...
-[2024:10:13 07:16:49.046 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsFactory`1[TOptions]>)"' completed successfully!
-[2024:10:13 07:16:49.048 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsMonitor`1[TOptions]>)"' was started...
-[2024:10:13 07:16:49.049 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsMonitor`1[TOptions]>)"' completed successfully!
-[2024:10:13 07:16:49.051 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddOptions<SqlServerOptions>(this IServiceCollection, IConfiguration)"' was started...
-[2024:10:13 07:16:49.061 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddOptions<SqlServerOptions>(this IServiceCollection, IConfiguration)"' completed successfully!
-[2024:10:13 07:16:49.064 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddSqlServer(this IServiceCollection)"' was started...
-[2024:10:13 07:16:49.067 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddSqlServer(this IServiceCollection)"' completed successfully!
-[2024:10:13 07:16:49.170 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddAuthorization(this IServiceCollection, IConfiguration)"' was started...
-[2024:10:13 07:16:49.181 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddAuthorization(this IServiceCollection, IConfiguration)"' completed successfully!
-[2024:10:13 07:16:49.184 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddRazorPagesWithAuthorization(this IServiceCollection, IConfiguration)"' was started...
-[2024:10:13 07:16:49.262 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddRazorPagesWithAuthorization(this IServiceCollection, IConfiguration)"' completed successfully!
-[2024:10:13 07:16:49.264 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddCascadingAuthenticationState(this IServiceCollection)"' was started...
-[2024:10:13 07:16:49.265 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddCascadingAuthenticationState(this IServiceCollection)"' completed successfully!
-[2024:10:13 07:16:49.267 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddServerSideBlazor(this IServiceCollection, Action`1)"' was started...
-[2024:10:13 07:16:49.293 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddServerSideBlazor(this IServiceCollection, Action`1)"' completed successfully!
-[2024:10:13 07:16:49.294 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddMudBlazorServices(this IServiceCollection, IConfiguration)"' was started...
-[2024:10:13 07:16:49.303 PM] [Verbose] [CoreServiceRegistrationPipeline] '"AddMudBlazorServices(this IServiceCollection, IConfiguration)"' completed successfully!
+[2024:10:13 07:16:48.999 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddOptions(this IServiceCollection)"' was started...
+[2024:10:13 07:16:49.043 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddOptions(this IServiceCollection)"' completed successfully!
+[2024:10:13 07:16:49.045 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsFactory`1[TOptions]>)"' was started...
+[2024:10:13 07:16:49.046 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsFactory`1[TOptions]>)"' completed successfully!
+[2024:10:13 07:16:49.048 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsMonitor`1[TOptions]>)"' was started...
+[2024:10:13 07:16:49.049 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddTransient(this IServiceCollection, Type<Microsoft.Extensions.Options.OptionsMonitor`1[TOptions]>)"' completed successfully!
+[2024:10:13 07:16:49.051 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddOptions<SqlServerOptions>(this IServiceCollection, IConfiguration)"' was started...
+[2024:10:13 07:16:49.061 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddOptions<SqlServerOptions>(this IServiceCollection, IConfiguration)"' completed successfully!
+[2024:10:13 07:16:49.064 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddSqlServer(this IServiceCollection)"' was started...
+[2024:10:13 07:16:49.067 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddSqlServer(this IServiceCollection)"' completed successfully!
+[2024:10:13 07:16:49.170 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddAuthorization(this IServiceCollection, IConfiguration)"' was started...
+[2024:10:13 07:16:49.181 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddAuthorization(this IServiceCollection, IConfiguration)"' completed successfully!
+[2024:10:13 07:16:49.184 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddRazorPagesWithAuthorization(this IServiceCollection, IConfiguration)"' was started...
+[2024:10:13 07:16:49.262 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddRazorPagesWithAuthorization(this IServiceCollection, IConfiguration)"' completed successfully!
+[2024:10:13 07:16:49.264 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddCascadingAuthenticationState(this IServiceCollection)"' was started...
+[2024:10:13 07:16:49.265 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddCascadingAuthenticationState(this IServiceCollection)"' completed successfully!
+[2024:10:13 07:16:49.267 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddServerSideBlazor(this IServiceCollection, Action`1)"' was started...
+[2024:10:13 07:16:49.293 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddServerSideBlazor(this IServiceCollection, Action`1)"' completed successfully!
+[2024:10:13 07:16:49.294 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddMudBlazorServices(this IServiceCollection, IConfiguration)"' was started...
+[2024:10:13 07:16:49.303 PM] [Verbose] [AppServiceRegistrationPipeline] '"AddMudBlazorServices(this IServiceCollection, IConfiguration)"' completed successfully!
 info: Microsoft.Hosting.Lifetime[14]
       Now listening on: https://localhost:7206
 info: Microsoft.Hosting.Lifetime[14]
@@ -420,6 +420,102 @@ info: Microsoft.Hosting.Lifetime[0]
 info: Microsoft.Hosting.Lifetime[0]
       Hosting environment: Development
 ```
+
+### Configuring the Pipeline Logger
+
+A `ServiceRegistrationPipeline` requires an `ILogger` implementation for startup-time logging.
+
+Because service composition executes before the application’s DI container is built, the logger must not depend on services resolved from the container. It should be constructed independently.
+
+#### Example: Using Serilog
+
+```csharp
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Extensions.Logging;
+
+public sealed class AppServiceRegistrationPipeline : ServiceRegistrationPipeline
+{
+    private static readonly ILogger _logger =
+        new SerilogLoggerFactory(
+            new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo.Console()
+                .CreateLogger())
+        .CreateLogger(nameof(AppServiceRegistrationPipeline));
+
+    protected override ILogger Logger => _logger;
+
+    public AppServiceRegistrationPipeline()
+    {
+        AddRegistration((services, config) =>
+            services.AddSingleton<IMyService, MyService>());
+    }
+}
+```
+
+#### Example: Environment-aware logging
+
+You can vary logging behavior based on environment or configuration, since the pipeline logger is created independently of the DI container.
+
+```csharp
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
+
+public sealed class AppServiceRegistrationPipeline : ServiceRegistrationPipeline
+{
+    private static readonly ILogger _logger = CreateLogger();
+
+    protected override ILogger Logger => _logger;
+
+    private static ILogger CreateLogger()
+    {
+        var environment =
+            Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+        var level = environment == Environments.Development
+            ? LogEventLevel.Verbose
+            : LogEventLevel.Information;
+
+        var serilog = new LoggerConfiguration()
+            .MinimumLevel.Is(level)
+            .WriteTo.Console()
+            .CreateLogger();
+
+        return new SerilogLoggerFactory(serilog)
+            .CreateLogger(nameof(AppServiceRegistrationPipeline));
+    }
+}
+```
+
+This allows detailed startup traces in development while keeping production logs focused and concise.
+
+### Opting Out of Logging
+
+If service registration logging is not required, you can return `NullLogger.Instance`:
+
+```csharp
+protected override ILogger Logger => NullLogger.Instance;
+```
+
+Startup logging is a core feature of **ServiceComposition.NET**. It provides visibility into registration order and early failures—particularly useful when diagnosing issues that occur before the host is fully built.
+
+However, not every host benefits from verbose startup output. For example, CLI applications or .NET global tools often prioritize clean console output for end users. In those cases, you may prefer to reduce the log level or disable startup logging entirely to avoid cluttering the user experience.
+
+Because the pipeline logger is created independently of the DI container, you can control its behavior using environment variables, configuration values, or command-line arguments:
+
+```csharp
+protected override ILogger Logger =>
+    Environment.GetEnvironmentVariable("SERVICE_COMPOSITION_VERBOSE") == "true"
+        ? _verboseLogger
+        : NullLogger.Instance;
+```
+
+This enables detailed startup diagnostics when needed while keeping production hosts and console tools quiet by default.
+
+When reducing or disabling logging, ensure that alternative diagnostics are available where appropriate—for example, enabling verbose mode behind a debug flag.
 
 ---
 
