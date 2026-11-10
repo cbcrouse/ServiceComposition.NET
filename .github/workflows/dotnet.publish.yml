@@ -53,7 +53,7 @@ jobs:
       - name: Setup .NET Core SDK
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '10.x'
+          dotnet-version: '11.x'
 
       - name: Restore NuGet packages
         run: dotnet restore src/ServiceComposition.NET/ServiceComposition.NET.csproj
