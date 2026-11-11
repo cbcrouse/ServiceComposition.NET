@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
       with:
         dotnet-version: 11.x
 
@@ -36,7 +36,7 @@ jobs:
     - name: Upload coverage reports to Codecov
       # You may pin to the exact commit or the version.
       # uses: codecov/codecov-action@fcebab03f26c7530a22baa63f06b3e0515f0c7cd
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@04b047e8bb82a0c002c8312c1c880fbc6a999d45 # v5
       with:
         # Repository upload token - get it from codecov.io. Required only for private repositories
         token: ${{ secrets.CODECOV_TOKEN }}
